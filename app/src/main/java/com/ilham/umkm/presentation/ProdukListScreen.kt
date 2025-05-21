@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
 import com.ilham.umkm.R
 import com.ilham.umkm.data.Product
 import com.ilham.umkm.data.mapper.toDomainModel
@@ -82,7 +83,7 @@ fun ProductListScreen(
         LazyColumn(contentPadding = it) {
             items(products) { product ->
                 ProductItem(
-                    product = product, // kita bahas sebentar lagi
+                    product = product,
                     onOrderClick = {
                         selectedProduct = it
                         showDialog = true
@@ -130,7 +131,7 @@ fun ProductListScreen(
                         context.startActivity(intent)
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF25D366) // WhatsApp green
+                        containerColor = Color(0xFF25D366)
                     )
                 ) {
                     Text("Ya", color = Color.White)
@@ -153,6 +154,13 @@ fun ProductItem(
     onOrderClick: (Product) -> Unit,
     onEditClick: (Product) -> Unit
 ) {
+
+    val painter = if (product.imageUri != null){
+        rememberAsyncImagePainter(model = product.imageUri)
+    } else {
+        painterResource(id = R.drawable.bg_product)
+    }
+
     Card(
         modifier = Modifier
             .padding(8.dp)
@@ -162,7 +170,7 @@ fun ProductItem(
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(
-                    painter = painterResource(id = product.imageRes),
+                    painter = painter,
                     contentDescription = null,
                     modifier = Modifier
                         .size(64.dp)

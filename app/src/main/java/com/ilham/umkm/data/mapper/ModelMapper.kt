@@ -10,6 +10,6 @@ fun ProductEntity.toDomainModel(): Product {
         name = name,
         description = description,
         price = price,
-        imageRes = R.drawable.bg_product
+        imageUri = null
     )
 }
