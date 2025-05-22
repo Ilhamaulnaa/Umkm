@@ -39,16 +39,17 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
         composable(NavRoutes.PRODUCT_LIST) {
             ProductListScreen(
                 viewModel = productViewModel,
-                onOrderClick = { product ->
-                    // TODO: implement WhatsApp intent
-                },
+//                onOrderClick = { product ->
+//                    // TODO: implement WhatsApp intent
+//                },
                 onAddClick = {
                     navController.navigate(NavRoutes.ADD_PRODUCT)
                 },
                 onEditClick = { products ->
                     editingProduct.value = products
                     navController.navigate(NavRoutes.EDIT_PRODUCT)
-                }
+                },
+                product = emptyList()
             )
         }
         composable(NavRoutes.ADD_PRODUCT) {

@@ -4,29 +4,37 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -41,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,15 +60,24 @@ import com.ilham.umkm.data.mapper.toDomainModel
 import com.ilham.umkm.ui.theme.UMKMTheme
 import kotlinx.coroutines.flow.map
 
+enum class SortOption(val label: String){
+    NAME("A-Z"),
+    PRICE_LOW("harga termurah"),
+    PRICE_HIGH("harga tertinggi")
+}
+
 @ExperimentalMaterial3Api
 @Composable
 fun ProductListScreen(
-//    products: List<Product>,
     viewModel: ProductViewModel,
-    onOrderClick: (Product) -> Unit,
+    product: List<Product>,
     onAddClick: () -> Unit,
-    onEditClick: (Product) -> Unit
+    onEditClick: (Product) -> Unit,
 ) {
+
+//    val products by viewModel.productList
+//        .map { list -> list.map { it.toDomainModel() } }
+//        .collectAsState(initial = emptyList())
 
     val products by viewModel.productList
         .map { list -> list.map { it.toDomainModel() } }
@@ -68,28 +86,118 @@ fun ProductListScreen(
     val context = LocalContext.current
     var selectedProduct by remember { mutableStateOf<Product?>(null) }
     var showDialog by remember { mutableStateOf(false) }
+    var searhQuery by remember { mutableStateOf("") }
 
+    var expanded by remember { mutableStateOf(false) }
+    var sortOption by remember { mutableStateOf(SortOption.NAME) }
+
+    val filterProduct = products
+        .filter {
+            it.name.contains(searhQuery, ignoreCase = false)
+        }
+        .let {
+            when(sortOption){
+                SortOption.NAME -> it.sortedBy { p -> p.name }
+                SortOption.PRICE_LOW -> it.sortedBy { p -> p.price }
+                SortOption.PRICE_HIGH -> it.sortedByDescending { p -> p.price }
+            }
+        }
+//    var expanded by remember { mutableStateOf(false) }
+//    var sortOption by remember { mutableStateOf(SortOption.NAME) }
+//
+//    val filterProduct = products
+//        .filter {
+//            it.name.contains(searhQuery, ignoreCase = false)
+//        }
+//        .let {
+//            when(sortOption){
+//                SortOption.NAME -> it.sortedBy { p -> p.name }
+//                SortOption.PRICE_LOW -> it.sortedBy { p -> p.price }
+//                SortOption.PRICE_HIGH -> it.sortedByDescending { p -> p.price }
+//            }
+//        }
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Katalog Produk") })
+            Column {
+                TopAppBar(title = { Text("Katalog Produk") })
+            }
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddClick) {
                 Icon(Icons.Default.Add, contentDescription = "Tambah Produk")
             }
         }
-    ) {
-        LazyColumn(contentPadding = it) {
-            items(products) { product ->
-                ProductItem(
-                    product = product,
-                    onOrderClick = {
-                        selectedProduct = it
-                        showDialog = true
-                    },
-                    onEditClick = { onEditClick(it) }
-                )
+    ) { paddingValues ->
+
+        Column(modifier = Modifier.padding(paddingValues)) {
+            OutlinedTextField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                value = searhQuery ,
+                onValueChange = {
+                    searhQuery = it
+                },
+                label = {
+                    Text(text = "Search")
+                },
+                placeholder = {
+                    Text(text = "Search your product")
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null
+                    )
+                },
+                maxLines = 1,
+                shape = RoundedCornerShape(corner = CornerSize(12.dp)),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+            )
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 8.dp)
+                    .wrapContentSize(align = Alignment.TopStart)
+            ){
+                Button(
+                    onClick = {
+                        expanded = true
+                    }
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_sort),
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Sorted: ${sortOption.label}")
+                }
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = true }
+                ) {
+                    SortOption.values().forEach {  option ->
+                        DropdownMenuItem(
+                            text = { Text(text = option.label) },
+                            onClick = {
+                                sortOption = option
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+            LazyColumn{
+                items(filterProduct) { product ->
+                    ProductItem(
+                        product = product,
+                        onOrderClick = {
+                            selectedProduct = it
+                            showDialog = true
+                        },
+                        onEditClick = { onEditClick(it) }
+                    )
+                }
             }
         }
     }
@@ -144,7 +252,6 @@ fun ProductListScreen(
             }
         )
     }
-
 }
 
 
